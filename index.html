@@ -3,18 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Quantum Math Matrix</title>
+    <title>Quantum Operator Core</title>
     <style>
         :root {
-            --bg-main: #09090b;
-            --bg-card: #18181b;
-            --border: #27272a;
-            --border-focus: #3f3f46;
-            --text-main: #fafafa;
-            --text-muted: #a1a1aa;
-            --violet: #7c3aed;
+            --bg-deep: #030305;
+            --bg-glow: #1a1528;
+            --glass-bg: rgba(20, 20, 25, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #ffffff;
+            --text-muted: #8b8b9e;
+            --violet: #8b5cf6;
+            --violet-glow: rgba(139, 92, 246, 0.4);
             --success: #10b981;
-            --error: #ef4444;
+            --success-glow: rgba(16, 185, 129, 0.3);
+            --warning: #f59e0b;
+            --error: #e11d48;
+            --error-glow: rgba(225, 29, 72, 0.3);
         }
 
         * {
@@ -23,119 +27,165 @@
             padding: 0;
             user-select: none;
             -webkit-user-select: none;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro", Helvetica, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* 100dvh perfectly accounts for mobile browser toolbars expanding and collapsing */
         body {
-            background-color: var(--bg-main);
+            background: radial-gradient(circle at 50% -20%, var(--bg-glow) 0%, var(--bg-deep) 70%);
             color: var(--text-main);
             display: flex;
             flex-direction: column;
             height: 100dvh; 
             overflow: hidden;
+            overscroll-behavior: none;
             touch-action: manipulation;
         }
 
-        /* Screens act as flexible columns that fill the body */
+        /* Screen Transitions */
         .screen {
             display: none;
             flex-direction: column;
             flex: 1;
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
             margin: 0 auto;
-            animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            opacity: 0;
+            transform: scale(0.98);
+            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .screen.active {
+            display: flex;
+            opacity: 1;
+            transform: scale(1);
         }
 
-        .screen.active { display: flex; }
-
         .padding-wrapper {
-            padding: 24px;
+            padding: clamp(12px, 4vw, 24px);
             display: flex;
             flex-direction: column;
             justify-content: center;
-            flex: 1;
+            min-height: 100%;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* Hardware Accelerated Animations */
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px var(--violet-glow); }
+            50% { box-shadow: 0 0 30px var(--violet-glow), inset 0 0 10px var(--violet-glow); }
+        }
+        @keyframes glitch {
+            0%, 100% { transform: translate3d(0, 0, 0) scale3d(1, 1, 1); }
+            20% { transform: translate3d(-8px, 2px, 0) scale3d(1.02, 1, 1) skewX(-2deg); filter: hue-rotate(-20deg); }
+            40% { transform: translate3d(8px, -2px, 0) scale3d(0.98, 1, 1) skewX(2deg); filter: hue-rotate(20deg); }
+            60% { transform: translate3d(-4px, 0, 0) scale3d(1, 1, 1); }
+            80% { transform: translate3d(4px, 0, 0) scale3d(1, 1, 1); }
+        }
+        @keyframes bloom {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.05); filter: brightness(1.5) drop-shadow(0 0 20px var(--success-glow)); }
+            100% { transform: scale(1); filter: brightness(1); }
         }
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-6px); }
-            40%, 80% { transform: translateX(6px); }
-        }
+        .glitch { animation: glitch 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+        .bloom { animation: bloom 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
-        .shake { animation: shake 0.25s ease-in-out; }
+        /* Typography */
+        h1 { font-size: clamp(1.4rem, 6vw, 2rem); font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4px; text-align: center; }
+        .subtitle { color: var(--text-muted); font-size: clamp(0.75rem, 3vw, 0.95rem); margin-bottom: clamp(16px, 5vw, 32px); text-align: center; line-height: 1.4; }
 
-        h1 { font-size: clamp(1.5rem, 5vw, 1.75rem); font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; text-align: center; }
-        .subtitle { color: var(--text-muted); font-size: clamp(0.85rem, 3vw, 0.95rem); margin-bottom: 32px; text-align: center; line-height: 1.4; }
-
-        /* Premium Form Controls */
-        .input-premium {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 16px;
-            border-radius: 14px;
-            width: 100%;
-            font-size: 1.1rem;
-            text-align: center;
-            outline: none;
-            margin-bottom: 20px;
-            transition: border-color 0.2s;
-        }
-        .input-premium:focus { border-color: var(--violet); }
-
+        /* Premium Buttons */
         .btn-premium {
             background: var(--text-main);
-            color: var(--bg-main);
+            color: var(--bg-deep);
             border: none;
-            padding: 16px;
-            border-radius: 14px;
+            padding: clamp(14px, 3vh, 18px);
+            border-radius: 16px;
             width: 100%;
-            font-size: 1rem;
-            font-weight: 600;
+            font-size: clamp(0.9rem, 4vw, 1.05rem);
+            font-weight: 700;
             cursor: pointer;
-            transition: transform 0.1s, background-color 0.2s;
+            transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s;
+            margin-top: clamp(12px, 3vh, 16px);
+            flex-shrink: 0;
+            box-shadow: 0 4px 14px rgba(255,255,255,0.1);
         }
-        .btn-premium:active { transform: scale(0.98); background: #e4e4e7; }
+        .btn-premium:active { transform: scale(0.96); background: #d4d4d8; }
+        
+        .btn-hint {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--violet);
+            border: 1px solid var(--violet);
+            padding: clamp(8px, 2vh, 12px) clamp(16px, 4vw, 24px);
+            border-radius: 24px;
+            font-size: clamp(0.8rem, 3.5vw, 0.95rem);
+            font-weight: 600;
+            margin-top: 16px;
+            transition: all 0.2s;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.1);
+        }
+        .btn-hint:active { background: var(--violet); color: #fff; transform: scale(0.95); }
 
-        /* Dynamic Grid Matrix Selector */
+        /* Dashboard Glass panels */
+        .dashboard-stats {
+            display: flex;
+            justify-content: space-around;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: clamp(12px, 3vw, 20px);
+            margin-bottom: clamp(16px, 4vw, 24px);
+            flex-shrink: 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .stat-block { text-align: center; }
+        .stat-val { font-size: clamp(1.2rem, 6vw, 1.8rem); font-weight: 800; color: var(--text-main); text-shadow: 0 2px 10px rgba(255,255,255,0.1); }
+        .stat-label { font-size: clamp(0.6rem, 2.5vw, 0.75rem); color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+
+        /* Dynamic Matrix Grid */
         .matrix-wrapper { 
             width: 100%; 
+            margin-bottom: 16px; 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); 
+            border-radius: 20px; 
+            padding: clamp(8px, 2vw, 16px); 
+            flex-shrink: 0;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        .matrix-grid { 
+            display: grid; 
+            grid-template-columns: repeat(11, 1fr); 
+            gap: clamp(1px, 0.5vw, 3px); 
+            width: 100%; 
             aspect-ratio: 1; 
-            margin-bottom: 32px; 
-            background: var(--bg-card); 
-            border: 1px solid var(--border); 
-            border-radius: 16px; 
-            padding: 12px; 
         }
-        .matrix-grid { display: grid; grid-template-columns: repeat(11, 1fr); gap: 3px; width: 100%; height: 100%; }
-        .matrix-cell {
-            background: #27272a; border-radius: 3px; aspect-ratio: 1; display: flex; align-items: center;
-            justify-content: center; font-size: clamp(0.4rem, 2vw, 0.6rem); color: #71717a; font-weight: 600; transition: all 0.15s ease;
-        }
-        .matrix-cell.selected { background: var(--violet); color: white; }
-        .matrix-cell.anchor { background: var(--text-main); color: var(--bg-main); transform: scale(1.08); box-shadow: 0 0 12px rgba(255,255,255,0.2); }
+        .matrix-cell { border-radius: 3px; background: rgba(255,255,255,0.03); transition: background 0.3s ease; }
+        .cell-learning { background: var(--warning); box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
+        .cell-mastered { background: var(--success); box-shadow: 0 0 8px var(--success-glow); }
 
-        /* Responsive Arena Interface Layout */
+        /* Arena Interface */
         .arena-nav { 
             width: 100%; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            padding: 16px 24px; 
+            padding: clamp(12px, 3vh, 20px) clamp(16px, 4vw, 24px); 
             color: var(--text-muted); 
-            font-size: 0.9rem;
-            border-bottom: 1px solid var(--border);
+            font-size: clamp(0.7rem, 3vw, 0.9rem);
+            border-bottom: 1px solid var(--glass-border);
+            font-weight: 600;
         }
-        .finish-tag { background: #27272a; padding: 6px 12px; border-radius: 20px; font-weight: 500; color: var(--text-main); cursor: pointer; }
+        .finish-tag { background: rgba(255,255,255,0.1); padding: 6px 14px; border-radius: 20px; color: var(--text-main); cursor: pointer; transition: background 0.2s; }
+        .finish-tag:active { background: rgba(255,255,255,0.2); }
         
-        /* Flex: 1 forces this container to take exactly the remaining space between nav and keyboard */
         .arena-main { 
             flex: 1; 
             display: flex; 
@@ -144,74 +194,144 @@
             align-items: center; 
             width: 100%; 
             padding: 16px;
-            min-height: 0; /* Prevents flex blowout on tiny screens */
+            min-height: 0; 
+            perspective: 1000px; /* Enables 3D tilt */
         }
-        .expr-card { font-size: clamp(3rem, 12vw, 5rem); font-weight: 700; letter-spacing: -2px; margin-bottom: 12px; }
-        .input-display { min-width: 120px; height: 60px; border-bottom: 3px solid var(--border); font-size: clamp(2.5rem, 10vw, 3.5rem); font-weight: 700; text-align: center; line-height: 60px; transition: color 0.1s, border-color 0.1s; }
-        .input-display.correct { color: var(--success); border-bottom-color: var(--success); }
-        .input-display.incorrect { color: var(--error); border-bottom-color: var(--error); }
+        
+        /* 3D Hardware Accelerated Card */
+        .card-3d-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+            will-change: transform;
+        }
 
-        /* Visual Scaffold Pedagogical Matrix */
-        .scaffold-view { min-height: 100px; display: flex; align-items: center; justify-content: center; margin-top: 16px; }
-        .scaffold-box { display: grid; gap: clamp(1px, 0.5vw, 2px); animation: fadeIn 0.2s ease; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
-        .scaffold-row { display: flex; gap: clamp(1px, 0.5vw, 2px); }
-        .scaffold-dot { width: clamp(4px, 2vw, 8px); height: clamp(4px, 2vw, 8px); background: var(--border); border-radius: 50%; }
-        .scaffold-dot.highlight { background: var(--violet); }
+        .expr-card { 
+            font-size: clamp(3rem, 16vw, 6.5rem); 
+            font-weight: 800; 
+            letter-spacing: -3px; 
+            margin-bottom: 4px; 
+            white-space: nowrap; 
+            transition: font-size 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transform: translateZ(30px); /* Pops off the card */
+        }
+        .expr-card.hinted-text { font-size: clamp(2rem, 10vw, 4.5rem); color: var(--text-muted); }
 
-        /* Tactile Virtual Keyboard Frame */
+        .input-display { 
+            min-width: 140px; 
+            height: clamp(50px, 12vw, 70px); 
+            border-bottom: 4px solid var(--glass-border); 
+            font-size: clamp(2.5rem, 12vw, 4.5rem); 
+            font-weight: 800; 
+            text-align: center; 
+            line-height: clamp(50px, 12vw, 70px); 
+            transition: color 0.2s, border-color 0.2s, text-shadow 0.2s;
+            transform: translateZ(20px);
+        }
+        .input-display.correct { color: var(--success); border-bottom-color: var(--success); text-shadow: 0 0 20px var(--success-glow); }
+        .input-display.incorrect { color: var(--error); border-bottom-color: var(--error); text-shadow: 0 0 20px var(--error-glow); }
+        .input-display.hinted { color: var(--violet); border-bottom-color: var(--violet); text-shadow: 0 0 20px var(--violet-glow); }
+
+        /* Scaffolding Engine */
+        .scaffold-view { min-height: clamp(60px, 15vh, 90px); display: flex; align-items: center; justify-content: center; margin-top: 16px; opacity: 0; transition: opacity 0.3s; transform: translateZ(10px); }
+        .scaffold-view.visible { opacity: 1; }
+        .scaffold-box { display: grid; gap: clamp(1px, 0.5vw, 3px); background: rgba(0,0,0,0.3); padding: clamp(6px, 2vw, 10px); border-radius: 12px; border: 1px solid var(--glass-border); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+        .scaffold-row { display: flex; gap: clamp(1px, 0.5vw, 3px); }
+        .scaffold-dot { width: clamp(4px, 1.8vw, 10px); height: clamp(4px, 1.8vw, 10px); background: rgba(255,255,255,0.1); border-radius: 50%; transition: background-color 0.3s, box-shadow 0.3s; }
+        .scaffold-dot.highlight { background: var(--violet); box-shadow: 0 0 8px var(--violet-glow); }
+
+        /* Edge-to-Edge Adaptive Keyboard */
         .keyboard-frame { 
             width: 100%; 
-            background: #0f0f11; 
-            border-top: 1px solid var(--border); 
-            padding: 16px 20px calc(16px + env(safe-area-inset-bottom)) 20px; 
+            background: rgba(10, 10, 14, 0.85); 
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-top: 1px solid var(--glass-border); 
+            padding: clamp(10px, 2vh, 16px) clamp(8px, 2vw, 20px) calc(clamp(10px, 2vh, 16px) + env(safe-area-inset-bottom)) clamp(8px, 2vw, 20px); 
+            flex-shrink: 0;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.4);
         }
-        .keyboard-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 400px; margin: 0 auto; }
+        .keyboard-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: clamp(6px, 2vw, 12px); 
+            max-width: 500px; 
+            margin: 0 auto; 
+        }
         .keycap {
-            background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); border-radius: 12px;
-            font-size: 1.6rem; font-weight: 600; padding: 12px 0; text-align: center; transition: background 0.05s, transform 0.05s;
+            background: rgba(255, 255, 255, 0.05); 
+            border: 1px solid var(--glass-border); 
+            color: var(--text-main); 
+            border-radius: clamp(10px, 3vw, 16px);
+            font-size: clamp(1.4rem, 6vw, 2rem); 
+            font-weight: 600; 
+            padding: clamp(10px, 2.5vh, 18px) 0; 
+            text-align: center; 
+            transition: background 0.05s, transform 0.05s, border-color 0.1s;
             touch-action: manipulation;
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.05), 0 4px 6px rgba(0,0,0,0.2);
         }
-        .keycap:active { background: var(--border-focus); transform: scale(0.96); }
-        .keycap.clr { color: var(--error); }
+        .keycap:active { 
+            background: rgba(255, 255, 255, 0.15); 
+            transform: scale(0.94); 
+            border-color: rgba(255,255,255,0.2);
+        }
+        .keycap.clr { color: var(--error); font-weight: 700; background: rgba(225, 29, 72, 0.1); border-color: rgba(225, 29, 72, 0.2); }
+        .keycap.clr:active { background: rgba(225, 29, 72, 0.25); }
 
-        /* Report Heatmap Analytics Dashboard */
-        .heatmap-container { display: grid; grid-template-columns: repeat(11, 1fr); gap: 2px; width: 100%; max-width: 400px; margin: 0 auto 24px auto; aspect-ratio: 1;}
-        .heat-cell { border-radius: 2px; font-size: clamp(0.4rem, 1.5vw, 0.6rem); display: flex; align-items: center; justify-content: center; font-weight: bold; background: #18181b; color: #52525b; }
+        /* Smartwatch Media Query */
+        @media (max-width: 350px) {
+            .subtitle { display: none; } /* Drop non-essential text */
+            .keyboard-frame { padding-left: 4px; padding-right: 4px; }
+            .keycap { border-radius: 8px; }
+            h1 { margin-bottom: 12px; }
+        }
     </style>
 </head>
 <body>
 
-    <div id="scr-login" class="screen active">
+    <div id="scr-dashboard" class="screen active">
         <div class="padding-wrapper">
-            <h1>Quantum Math</h1>
-            <div class="subtitle">A friction-free, specialized tracking landscape designed for neurological optimization.</div>
-            <input type="text" id="username" class="input-premium" placeholder="Enter Operator Key" autocomplete="off" autocapitalize="words">
-            <button class="btn-premium" onclick="authSession()">Access System</button>
-        </div>
-    </div>
-
-    <div id="scr-selector" class="screen">
-        <div class="padding-wrapper">
-            <h1>Target Envelope</h1>
-            <div class="subtitle" id="selector-label">Tap across the array quadrant to isolate target multiplication parameters.</div>
-            <div class="matrix-wrapper">
-                <div id="selector-grid" class="matrix-grid"></div>
+            <h1>Mastery Database</h1>
+            <div class="subtitle">Operator local storage engaged.</div>
+            
+            <div class="dashboard-stats">
+                <div class="stat-block">
+                    <div class="stat-val" id="stat-due">0</div>
+                    <div class="stat-label">Vectors Due</div>
+                </div>
+                <div class="stat-block">
+                    <div class="stat-val" id="stat-mastered">0%</div>
+                    <div class="stat-label">Mastered</div>
+                </div>
             </div>
-            <button class="btn-premium" onclick="initArena()">Engage Vector Pipeline</button>
+
+            <div class="matrix-wrapper">
+                <div id="mastery-grid" class="matrix-grid"></div>
+            </div>
+            
+            <button class="btn-premium" onclick="initGrind()">Engage Core Routine</button>
         </div>
     </div>
 
     <div id="scr-arena" class="screen">
         <div class="arena-nav">
-            <span id="label-user" style="font-size: 0.8rem;">OP: --</span>
-            <span class="finish-tag" onclick="compileDiagnostics()">End Run</span>
-            <span id="label-streak" style="font-size: 0.8rem;">Streak: 0</span>
+            <span id="queue-counter">Queue: 0</span>
+            <span class="finish-tag" onclick="saveAndExit()">Save & Exit</span>
         </div>
         
-        <div class="arena-main" id="arena-card-container">
-            <div class="expr-card" id="expr-text">-- × --</div>
-            <div class="input-display" id="expr-input"></div>
-            <div class="scaffold-view" id="scaffold-view"></div>
+        <div class="arena-main" id="arena-surface">
+            <div class="card-3d-wrapper" id="arena-card-container">
+                <div class="expr-card" id="expr-text">-- × --</div>
+                <div class="input-display" id="expr-input"></div>
+                
+                <button class="btn-hint" id="btn-hint" onclick="triggerHint()">Neural Link Hint</button>
+                
+                <div class="scaffold-view" id="scaffold-view"></div>
+            </div>
         </div>
         
         <div class="keyboard-frame">
@@ -232,177 +352,207 @@
         </div>
     </div>
 
-    <div id="scr-report" class="screen">
-        <div class="padding-wrapper">
-            <h1>Diagnostic Map</h1>
-            <div class="subtitle">Green is optimized fluid tracking. Red identifies memory degradation. Dark zinc implies non-targeted vectors.</div>
-            <div id="report-heatmap" class="heatmap-container"></div>
-            <button class="btn-premium" onclick="exitSession()">Re-Isolate Parameters</button>
-        </div>
-    </div>
-
     <script>
-        // System Global Architecture
-        let session = {
-            operator: "User",
-            boundX: 12, boundY: 12,
-            activeQueue: [],
-            activeItem: null,
-            buffer: "",
-            streak: 0,
-            locked: false,
-            timestampStart: null,
-            telemetry: {}
-        };
+        let db = {};
+        let sessionQueue = [];
+        let activeFact = null;
+        let buffer = "";
+        let inputLocked = false;
+        let usedHintForCurrent = false;
 
-        function authSession() {
-            const val = document.getElementById('username').value.trim();
-            if(val) session.operator = val;
-            generateBoundaryGrid();
-            setScreen('scr-selector');
+        // --- Hardware 3D Tilt Engine ---
+        const arenaSurface = document.getElementById('arena-surface');
+        const card3D = document.getElementById('arena-card-container');
+
+        arenaSurface.addEventListener('touchmove', (e) => {
+            if(!activeFact) return;
+            const touch = e.touches[0];
+            const rect = arenaSurface.getBoundingClientRect();
+            // Calculate relative position (-1 to 1)
+            const x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+            const y = ((touch.clientY - rect.top) / rect.height) * 2 - 1;
+            
+            // Constrain tilt to 15 degrees max
+            card3D.style.transform = `rotateX(${-y * 15}deg) rotateY(${x * 15}deg)`;
+        }, {passive: true});
+
+        arenaSurface.addEventListener('touchend', () => {
+            // Snap back to center
+            card3D.style.transform = `rotateX(0deg) rotateY(0deg)`;
+        });
+
+        // --- Database Engine ---
+        function initDB() {
+            const stored = localStorage.getItem('quantum_operator_db');
+            if (stored) {
+                db = JSON.parse(stored);
+            } else {
+                for (let r = 2; r <= 12; r++) {
+                    for (let c = 2; c <= 12; c++) {
+                        db[`${r}x${c}`] = { x: r, y: c, ans: r * c, interval: 0, ease: 2.5, nextDue: 0, status: "new" };
+                    }
+                }
+                saveDB();
+            }
+            renderDashboard();
+        }
+
+        function saveDB() {
+            localStorage.setItem('quantum_operator_db', JSON.stringify(db));
         }
 
         function setScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.screen').forEach(s => {
+                s.classList.remove('active');
+            });
+            // Small delay allows display:flex to render before opacity fades in
+            setTimeout(() => {
+                document.getElementById(id).classList.add('active');
+            }, 10);
         }
 
-        // Build interactive grid selector logic
-        function generateBoundaryGrid() {
-            const target = document.getElementById('selector-grid');
-            target.innerHTML = "";
-            for(let r=2; r<=12; r++) {
-                for(let c=2; c<=12; c++) {
-                    let cell = document.createElement('div');
+        // --- UI Rendering ---
+        function renderDashboard() {
+            let dueCount = 0; let masteredCount = 0;
+            const now = Date.now();
+            const grid = document.getElementById('mastery-grid');
+            grid.innerHTML = "";
+
+            for (let r = 2; r <= 12; r++) {
+                for (let c = 2; c <= 12; c++) {
+                    const fact = db[`${r}x${c}`];
+                    const cell = document.createElement('div');
                     cell.className = "matrix-cell";
-                    cell.innerText = `${r}×${c}`;
                     
-                    const trigger = (e) => {
-                        e.preventDefault();
-                        mapSelectionConstraints(r, c);
-                    };
-                    cell.addEventListener('touchstart', trigger, {passive:false});
-                    cell.addEventListener('click', trigger);
-                    target.appendChild(cell);
+                    if (fact.status === "mastered") { cell.classList.add('cell-mastered'); masteredCount++; } 
+                    else if (fact.status === "learning") { cell.classList.add('cell-learning'); }
+                    if (fact.nextDue <= now && fact.status !== "new") { dueCount++; }
+                    
+                    grid.appendChild(cell);
                 }
             }
-            mapSelectionConstraints(12, 12);
+
+            document.getElementById('stat-due').innerText = Math.max(15, dueCount);
+            document.getElementById('stat-mastered').innerText = Math.round((masteredCount / 121) * 100) + "%";
         }
 
-        function mapSelectionConstraints(maxRow, maxCol) {
-            session.boundX = maxRow;
-            session.boundY = maxCol;
-            document.getElementById('selector-label').innerText = `Isolating bounds up to: ${maxRow} × ${maxCol}`;
-            
-            let cells = document.getElementById('selector-grid').children;
-            let idx = 0;
-            for(let r=2; r<=12; r++) {
-                for(let c=2; c<=12; c++) {
-                    let item = cells[idx++];
-                    item.className = "matrix-cell";
-                    if(r <= maxRow && c <= maxCol) item.classList.add('selected');
-                    if(r === maxRow && c === maxCol) item.classList.add('anchor');
-                }
-            }
-        }
+        function initGrind() {
+            sessionQueue = [];
+            const now = Date.now();
+            let dueCards = []; let newCards = [];
 
-        function initArena() {
-            session.activeQueue = [];
-            session.telemetry = {};
-            for(let i=2; i<=session.boundX; i++) {
-                for(let j=2; j<=session.boundY; j++) {
-                    const key = `${i}x${j}`;
-                    session.activeQueue.push({x: i, y: j, ans: i*j});
-                    session.telemetry[key] = { attempts: 0, timings: [] };
-                }
+            Object.values(db).forEach(fact => {
+                if (fact.status === "new") newCards.push(fact);
+                else if (fact.nextDue <= now) dueCards.push(fact);
+            });
+
+            while (dueCards.length < 15 && newCards.length > 0) {
+                dueCards.push(newCards.shift());
             }
-            // Ensure Operator name fits cleanly on small screens by truncating if too long
-            let displayName = session.operator.length > 8 ? session.operator.substring(0,8) + ".." : session.operator;
-            document.getElementById('label-user').innerText = `OP: ${displayName}`;
+
+            sessionQueue = dueCards.sort(() => Math.random() - 0.5);
             setScreen('scr-arena');
-            nextChallenge();
+            serveNext();
         }
 
-        function nextChallenge() {
-            if(session.activeQueue.length === 0) {
-                compileDiagnostics();
+        function serveNext() {
+            if (sessionQueue.length === 0) {
+                saveAndExit();
                 return;
             }
+
+            activeFact = sessionQueue[0];
+            document.getElementById('queue-counter').innerText = `Vectors Remaining: ${sessionQueue.length}`;
             
-            const randIdx = Math.floor(Math.random() * session.activeQueue.length);
-            session.activeItem = session.activeQueue.splice(randIdx, 1)[0];
+            const exprText = document.getElementById('expr-text');
+            exprText.innerText = `${activeFact.x} × ${activeFact.y}`;
+            exprText.classList.remove('hinted-text');
             
-            document.getElementById('expr-text').innerText = `${session.activeItem.x} × ${session.activeItem.y}`;
-            session.buffer = "";
-            session.locked = false;
+            buffer = "";
+            inputLocked = false;
+            usedHintForCurrent = false;
             
             const display = document.getElementById('expr-input');
             display.innerText = "";
             display.className = "input-display";
-            document.getElementById('scaffold-view').innerHTML = "";
-            session.timestampStart = Date.now();
+            
+            document.getElementById('btn-hint').style.display = "block";
+            
+            // Re-trigger animation
+            document.getElementById('btn-hint').style.animation = 'none';
+            setTimeout(() => document.getElementById('btn-hint').style.animation = 'pulseGlow 2s infinite', 10);
+
+            document.getElementById('scaffold-view').classList.remove('visible');
+            card3D.classList.remove('glitch', 'bloom'); // Clear physics states
+        }
+
+        function triggerHint() {
+            if (inputLocked) return;
+            usedHintForCurrent = true;
+            
+            const exprText = document.getElementById('expr-text');
+            exprText.innerText = `${activeFact.x} × ${activeFact.y} = ${activeFact.ans}`;
+            exprText.classList.add('hinted-text');
+            
+            document.getElementById('btn-hint').style.display = "none";
+            renderSpatialScaffolding(activeFact.x, activeFact.y);
         }
 
         function press(key) {
-            if(session.locked) return;
+            if (inputLocked) return;
             const display = document.getElementById('expr-input');
-            const targetLen = session.activeItem.ans.toString().length;
+            const targetLen = activeFact.ans.toString().length;
 
-            if(key === 'C') {
-                session.buffer = "";
-                display.innerText = "";
-                return;
-            }
-
-            if(session.buffer.length < targetLen) {
-                session.buffer += key;
-                display.innerText = session.buffer;
-            }
-
-            if(session.buffer.length === targetLen) {
-                session.locked = true;
-                verifyPipeline();
+            if (key === 'C') { buffer = ""; display.innerText = ""; return; }
+            if (buffer.length < targetLen) { buffer += key; display.innerText = buffer; }
+            if (buffer.length === targetLen) {
+                inputLocked = true;
+                evaluateAnswer();
             }
         }
 
-        function verifyPipeline() {
+        function evaluateAnswer() {
             const display = document.getElementById('expr-input');
-            const cardFrame = document.getElementById('arena-card-container');
-            const userResponse = parseInt(session.buffer);
-            const absoluteValue = session.activeItem.ans;
-            const latency = Date.now() - session.timestampStart;
-            
-            const telemetryKey = `${session.activeItem.x}x${session.activeItem.y}`;
-            session.telemetry[telemetryKey].attempts++;
+            const isCorrect = (parseInt(buffer) === activeFact.ans);
+            const dbRef = db[`${activeFact.x}x${activeFact.y}`];
 
-            if(userResponse === absoluteValue) {
-                session.telemetry[telemetryKey].timings.push({ speed: latency, status: true });
+            if (isCorrect && !usedHintForCurrent) {
                 display.classList.add('correct');
-                session.streak++;
-                document.getElementById('label-streak').innerText = `Streak: ${session.streak}`;
-                setTimeout(nextChallenge, 300);
+                card3D.classList.add('bloom'); // Trigger 60fps Bloom effect
+                
+                dbRef.status = dbRef.interval >= 3 ? "mastered" : "learning";
+                dbRef.interval = dbRef.interval === 0 ? 1 : Math.round(dbRef.interval * dbRef.ease);
+                dbRef.ease = Math.min(3.0, dbRef.ease + 0.1);
+                dbRef.nextDue = Date.now() + (dbRef.interval * 24 * 60 * 60 * 1000);
+                
+                sessionQueue.shift();
+                setTimeout(serveNext, 450);
+
             } else {
-                session.telemetry[telemetryKey].timings.push({ speed: latency, status: false });
-                display.classList.add('incorrect');
-                cardFrame.classList.add('shake');
-                session.streak = 0;
-                document.getElementById('label-streak').innerText = `Streak: ${session.streak}`;
+                if (usedHintForCurrent) {
+                    display.classList.add('hinted');
+                } else {
+                    display.classList.add('incorrect');
+                    card3D.classList.add('glitch'); // Trigger 60fps Hardware Glitch
+                    renderSpatialScaffolding(activeFact.x, activeFact.y);
+                }
+
+                dbRef.status = "learning";
+                dbRef.interval = 0;
+                dbRef.ease = Math.max(1.3, dbRef.ease - 0.2);
+                dbRef.nextDue = Date.now(); 
                 
-                setTimeout(() => cardFrame.classList.remove('shake'), 300);
-                
-                renderSpatialScaffolding(session.activeItem.x, session.activeItem.y);
-                
-                const targetReinsert = Math.min(2, session.activeQueue.length);
-                session.activeQueue.splice(targetReinsert, 0, session.activeItem);
-                
-                setTimeout(nextChallenge, 2800);
+                const failedCard = sessionQueue.shift();
+                sessionQueue.splice(Math.min(3, sessionQueue.length), 0, failedCard);
+
+                setTimeout(serveNext, usedHintForCurrent ? 1200 : 2500);
             }
+            saveDB();
         }
 
         function renderSpatialScaffolding(rows, cols) {
             const container = document.getElementById('scaffold-view');
             container.innerHTML = "";
-            
             const matrixBox = document.createElement('div');
             matrixBox.className = "scaffold-box";
             
@@ -412,57 +562,23 @@
                 for(let c=1; c<=12; c++) {
                     const dot = document.createElement('div');
                     dot.className = "scaffold-dot";
-                    if(r <= rows && c <= cols) {
-                        dot.classList.add('highlight');
-                    }
+                    if(r <= rows && c <= cols) dot.classList.add('highlight');
                     rowDiv.appendChild(dot);
                 }
                 matrixBox.appendChild(rowDiv);
             }
             container.appendChild(matrixBox);
+            // Request animation frame ensures DOM paints before transitioning opacity
+            requestAnimationFrame(() => container.classList.add('visible'));
         }
 
-        function compileDiagnostics() {
-            setScreen('scr-report');
-            const targetMap = document.getElementById('report-heatmap');
-            targetMap.innerHTML = "";
-            
-            for(let r=2; r<=12; r++) {
-                for(let c=2; c<=12; c++) {
-                    const key = `${r}x${c}`;
-                    const cell = document.createElement('div');
-                    cell.className = "heat-cell";
-                    cell.innerText = `${r}×${c}`;
-                    
-                    if(session.telemetry[key]) {
-                        const data = session.telemetry[key];
-                        if(data.attempts === 0) {
-                            cell.style.background = "#27272a"; 
-                        } else {
-                            const lastAttempt = data.timings[data.timings.length - 1];
-                            if(!lastAttempt.status) {
-                                cell.style.background = "#7f1d1d"; 
-                                cell.style.color = "#ef4444";
-                            } else if(lastAttempt.speed < 1500) {
-                                cell.style.background = "#064e3b"; 
-                                cell.style.color = "#10b981";
-                            } else {
-                                cell.style.background = "#78350f"; 
-                                cell.style.color = "#f59e0b";
-                            }
-                        }
-                    } else {
-                        cell.style.background = "#09090b"; 
-                        cell.style.opacity = "0.2";
-                    }
-                    targetMap.appendChild(cell);
-                }
-            }
+        function saveAndExit() {
+            saveDB();
+            setScreen('scr-dashboard');
+            setTimeout(renderDashboard, 100);
         }
 
-        function exitSession() {
-            setScreen('scr-selector');
-        }
+        initDB();
     </script>
 </body>
 </html>
