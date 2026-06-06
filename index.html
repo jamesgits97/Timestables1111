@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Quantum Math Matrix</title>
+    <style>
+        :root {
+            --bg-main: #09090b;
+            --bg-card: #18181b;
+            --border: #27272a;
+            --border-focus: #3f3f46;
+            --text-main: #fafafa;
+            --text-muted: #a1a1aa;
+            --violet: #7c3aed;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+        }
+
+        /* 100dvh perfectly accounts for mobile browser toolbars expanding and collapsing */
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100dvh; 
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        /* Screens act as flexible columns that fill the body */
+        .screen {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .screen.active { display: flex; }
+
+        .padding-wrapper {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex: 1;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+
+        .shake { animation: shake 0.25s ease-in-out; }
+
+        h1 { font-size: clamp(1.5rem, 5vw, 1.75rem); font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; text-align: center; }
+        .subtitle { color: var(--text-muted); font-size: clamp(0.85rem, 3vw, 0.95rem); margin-bottom: 32px; text-align: center; line-height: 1.4; }
+
+        /* Premium Form Controls */
+        .input-premium {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 16px;
+            border-radius: 14px;
+            width: 100%;
+            font-size: 1.1rem;
+            text-align: center;
+            outline: none;
+            margin-bottom: 20px;
+            transition: border-color 0.2s;
+        }
+        .input-premium:focus { border-color: var(--violet); }
+
+        .btn-premium {
+            background: var(--text-main);
+            color: var(--bg-main);
+            border: none;
+            padding: 16px;
+            border-radius: 14px;
+            width: 100%;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .btn-premium:active { transform: scale(0.98); background: #e4e4e7; }
+
+        /* Dynamic Grid Matrix Selector */
+        .matrix-wrapper { 
+            width: 100%; 
+            aspect-ratio: 1; 
+            margin-bottom: 32px; 
+            background: var(--bg-card); 
+            border: 1px solid var(--border); 
+            border-radius: 16px; 
+            padding: 12px; 
+        }
+        .matrix-grid { display: grid; grid-template-columns: repeat(11, 1fr); gap: 3px; width: 100%; height: 100%; }
+        .matrix-cell {
+            background: #27272a; border-radius: 3px; aspect-ratio: 1; display: flex; align-items: center;
+            justify-content: center; font-size: clamp(0.4rem, 2vw, 0.6rem); color: #71717a; font-weight: 600; transition: all 0.15s ease;
+        }
+        .matrix-cell.selected { background: var(--violet); color: white; }
+        .matrix-cell.anchor { background: var(--text-main); color: var(--bg-main); transform: scale(1.08); box-shadow: 0 0 12px rgba(255,255,255,0.2); }
+
+        /* Responsive Arena Interface Layout */
+        .arena-nav { 
+            width: 100%; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 16px 24px; 
+            color: var(--text-muted); 
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .finish-tag { background: #27272a; padding: 6px 12px; border-radius: 20px; font-weight: 500; color: var(--text-main); cursor: pointer; }
+        
+        /* Flex: 1 forces this container to take exactly the remaining space between nav and keyboard */
+        .arena-main { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            width: 100%; 
+            padding: 16px;
+            min-height: 0; /* Prevents flex blowout on tiny screens */
+        }
+        .expr-card { font-size: clamp(3rem, 12vw, 5rem); font-weight: 700; letter-spacing: -2px; margin-bottom: 12px; }
+        .input-display { min-width: 120px; height: 60px; border-bottom: 3px solid var(--border); font-size: clamp(2.5rem, 10vw, 3.5rem); font-weight: 700; text-align: center; line-height: 60px; transition: color 0.1s, border-color 0.1s; }
+        .input-display.correct { color: var(--success); border-bottom-color: var(--success); }
+        .input-display.incorrect { color: var(--error); border-bottom-color: var(--error); }
+
+        /* Visual Scaffold Pedagogical Matrix */
+        .scaffold-view { min-height: 100px; display: flex; align-items: center; justify-content: center; margin-top: 16px; }
+        .scaffold-box { display: grid; gap: clamp(1px, 0.5vw, 2px); animation: fadeIn 0.2s ease; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+        .scaffold-row { display: flex; gap: clamp(1px, 0.5vw, 2px); }
+        .scaffold-dot { width: clamp(4px, 2vw, 8px); height: clamp(4px, 2vw, 8px); background: var(--border); border-radius: 50%; }
+        .scaffold-dot.highlight { background: var(--violet); }
+
+        /* Tactile Virtual Keyboard Frame */
+        .keyboard-frame { 
+            width: 100%; 
+            background: #0f0f11; 
+            border-top: 1px solid var(--border); 
+            padding: 16px 20px calc(16px + env(safe-area-inset-bottom)) 20px; 
+        }
+        .keyboard-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 400px; margin: 0 auto; }
+        .keycap {
+            background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); border-radius: 12px;
+            font-size: 1.6rem; font-weight: 600; padding: 12px 0; text-align: center; transition: background 0.05s, transform 0.05s;
+            touch-action: manipulation;
+        }
+        .keycap:active { background: var(--border-focus); transform: scale(0.96); }
+        .keycap.clr { color: var(--error); }
+
+        /* Report Heatmap Analytics Dashboard */
+        .heatmap-container { display: grid; grid-template-columns: repeat(11, 1fr); gap: 2px; width: 100%; max-width: 400px; margin: 0 auto 24px auto; aspect-ratio: 1;}
+        .heat-cell { border-radius: 2px; font-size: clamp(0.4rem, 1.5vw, 0.6rem); display: flex; align-items: center; justify-content: center; font-weight: bold; background: #18181b; color: #52525b; }
+    </style>
+</head>
+<body>
+
+    <div id="scr-login" class="screen active">
+        <div class="padding-wrapper">
+            <h1>Quantum Math</h1>
+            <div class="subtitle">A friction-free, specialized tracking landscape designed for neurological optimization.</div>
+            <input type="text" id="username" class="input-premium" placeholder="Enter Operator Key" autocomplete="off" autocapitalize="words">
+            <button class="btn-premium" onclick="authSession()">Access System</button>
+        </div>
+    </div>
+
+    <div id="scr-selector" class="screen">
+        <div class="padding-wrapper">
+            <h1>Target Envelope</h1>
+            <div class="subtitle" id="selector-label">Tap across the array quadrant to isolate target multiplication parameters.</div>
+            <div class="matrix-wrapper">
+                <div id="selector-grid" class="matrix-grid"></div>
+            </div>
+            <button class="btn-premium" onclick="initArena()">Engage Vector Pipeline</button>
+        </div>
+    </div>
+
+    <div id="scr-arena" class="screen">
+        <div class="arena-nav">
+            <span id="label-user" style="font-size: 0.8rem;">OP: --</span>
+            <span class="finish-tag" onclick="compileDiagnostics()">End Run</span>
+            <span id="label-streak" style="font-size: 0.8rem;">Streak: 0</span>
+        </div>
+        
+        <div class="arena-main" id="arena-card-container">
+            <div class="expr-card" id="expr-text">-- × --</div>
+            <div class="input-display" id="expr-input"></div>
+            <div class="scaffold-view" id="scaffold-view"></div>
+        </div>
+        
+        <div class="keyboard-frame">
+            <div class="keyboard-grid">
+                <div class="keycap" onclick="press(1)">1</div>
+                <div class="keycap" onclick="press(2)">2</div>
+                <div class="keycap" onclick="press(3)">3</div>
+                <div class="keycap" onclick="press(4)">4</div>
+                <div class="keycap" onclick="press(5)">5</div>
+                <div class="keycap" onclick="press(6)">6</div>
+                <div class="keycap" onclick="press(7)">7</div>
+                <div class="keycap" onclick="press(8)">8</div>
+                <div class="keycap" onclick="press(9)">9</div>
+                <div class="keycap clr" onclick="press('C')">C</div>
+                <div class="keycap" onclick="press(0)">0</div>
+                <div class="keycap" style="visibility:hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="scr-report" class="screen">
+        <div class="padding-wrapper">
+            <h1>Diagnostic Map</h1>
+            <div class="subtitle">Green is optimized fluid tracking. Red identifies memory degradation. Dark zinc implies non-targeted vectors.</div>
+            <div id="report-heatmap" class="heatmap-container"></div>
+            <button class="btn-premium" onclick="exitSession()">Re-Isolate Parameters</button>
+        </div>
+    </div>
+
+    <script>
+        // System Global Architecture
+        let session = {
+            operator: "User",
+            boundX: 12, boundY: 12,
+            activeQueue: [],
+            activeItem: null,
+            buffer: "",
+            streak: 0,
+            locked: false,
+            timestampStart: null,
+            telemetry: {}
+        };
+
+        function authSession() {
+            const val = document.getElementById('username').value.trim();
+            if(val) session.operator = val;
+            generateBoundaryGrid();
+            setScreen('scr-selector');
+        }
+
+        function setScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        // Build interactive grid selector logic
+        function generateBoundaryGrid() {
+            const target = document.getElementById('selector-grid');
+            target.innerHTML = "";
+            for(let r=2; r<=12; r++) {
+                for(let c=2; c<=12; c++) {
+                    let cell = document.createElement('div');
+                    cell.className = "matrix-cell";
+                    cell.innerText = `${r}×${c}`;
+                    
+                    const trigger = (e) => {
+                        e.preventDefault();
+                        mapSelectionConstraints(r, c);
+                    };
+                    cell.addEventListener('touchstart', trigger, {passive:false});
+                    cell.addEventListener('click', trigger);
+                    target.appendChild(cell);
+                }
+            }
+            mapSelectionConstraints(12, 12);
+        }
+
+        function mapSelectionConstraints(maxRow, maxCol) {
+            session.boundX = maxRow;
+            session.boundY = maxCol;
+            document.getElementById('selector-label').innerText = `Isolating bounds up to: ${maxRow} × ${maxCol}`;
+            
+            let cells = document.getElementById('selector-grid').children;
+            let idx = 0;
+            for(let r=2; r<=12; r++) {
+                for(let c=2; c<=12; c++) {
+                    let item = cells[idx++];
+                    item.className = "matrix-cell";
+                    if(r <= maxRow && c <= maxCol) item.classList.add('selected');
+                    if(r === maxRow && c === maxCol) item.classList.add('anchor');
+                }
+            }
+        }
+
+        function initArena() {
+            session.activeQueue = [];
+            session.telemetry = {};
+            for(let i=2; i<=session.boundX; i++) {
+                for(let j=2; j<=session.boundY; j++) {
+                    const key = `${i}x${j}`;
+                    session.activeQueue.push({x: i, y: j, ans: i*j});
+                    session.telemetry[key] = { attempts: 0, timings: [] };
+                }
+            }
+            // Ensure Operator name fits cleanly on small screens by truncating if too long
+            let displayName = session.operator.length > 8 ? session.operator.substring(0,8) + ".." : session.operator;
+            document.getElementById('label-user').innerText = `OP: ${displayName}`;
+            setScreen('scr-arena');
+            nextChallenge();
+        }
+
+        function nextChallenge() {
+            if(session.activeQueue.length === 0) {
+                compileDiagnostics();
+                return;
+            }
+            
+            const randIdx = Math.floor(Math.random() * session.activeQueue.length);
+            session.activeItem = session.activeQueue.splice(randIdx, 1)[0];
+            
+            document.getElementById('expr-text').innerText = `${session.activeItem.x} × ${session.activeItem.y}`;
+            session.buffer = "";
+            session.locked = false;
+            
+            const display = document.getElementById('expr-input');
+            display.innerText = "";
+            display.className = "input-display";
+            document.getElementById('scaffold-view').innerHTML = "";
+            session.timestampStart = Date.now();
+        }
+
+        function press(key) {
+            if(session.locked) return;
+            const display = document.getElementById('expr-input');
+            const targetLen = session.activeItem.ans.toString().length;
+
+            if(key === 'C') {
+                session.buffer = "";
+                display.innerText = "";
+                return;
+            }
+
+            if(session.buffer.length < targetLen) {
+                session.buffer += key;
+                display.innerText = session.buffer;
+            }
+
+            if(session.buffer.length === targetLen) {
+                session.locked = true;
+                verifyPipeline();
+            }
+        }
+
+        function verifyPipeline() {
+            const display = document.getElementById('expr-input');
+            const cardFrame = document.getElementById('arena-card-container');
+            const userResponse = parseInt(session.buffer);
+            const absoluteValue = session.activeItem.ans;
+            const latency = Date.now() - session.timestampStart;
+            
+            const telemetryKey = `${session.activeItem.x}x${session.activeItem.y}`;
+            session.telemetry[telemetryKey].attempts++;
+
+            if(userResponse === absoluteValue) {
+                session.telemetry[telemetryKey].timings.push({ speed: latency, status: true });
+                display.classList.add('correct');
+                session.streak++;
+                document.getElementById('label-streak').innerText = `Streak: ${session.streak}`;
+                setTimeout(nextChallenge, 300);
+            } else {
+                session.telemetry[telemetryKey].timings.push({ speed: latency, status: false });
+                display.classList.add('incorrect');
+                cardFrame.classList.add('shake');
+                session.streak = 0;
+                document.getElementById('label-streak').innerText = `Streak: ${session.streak}`;
+                
+                setTimeout(() => cardFrame.classList.remove('shake'), 300);
+                
+                renderSpatialScaffolding(session.activeItem.x, session.activeItem.y);
+                
+                const targetReinsert = Math.min(2, session.activeQueue.length);
+                session.activeQueue.splice(targetReinsert, 0, session.activeItem);
+                
+                setTimeout(nextChallenge, 2800);
+            }
+        }
+
+        function renderSpatialScaffolding(rows, cols) {
+            const container = document.getElementById('scaffold-view');
+            container.innerHTML = "";
+            
+            const matrixBox = document.createElement('div');
+            matrixBox.className = "scaffold-box";
+            
+            for(let r=1; r<=12; r++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = "scaffold-row";
+                for(let c=1; c<=12; c++) {
+                    const dot = document.createElement('div');
+                    dot.className = "scaffold-dot";
+                    if(r <= rows && c <= cols) {
+                        dot.classList.add('highlight');
+                    }
+                    rowDiv.appendChild(dot);
+                }
+                matrixBox.appendChild(rowDiv);
+            }
+            container.appendChild(matrixBox);
+        }
+
+        function compileDiagnostics() {
+            setScreen('scr-report');
+            const targetMap = document.getElementById('report-heatmap');
+            targetMap.innerHTML = "";
+            
+            for(let r=2; r<=12; r++) {
+                for(let c=2; c<=12; c++) {
+                    const key = `${r}x${c}`;
+                    const cell = document.createElement('div');
+                    cell.className = "heat-cell";
+                    cell.innerText = `${r}×${c}`;
+                    
+                    if(session.telemetry[key]) {
+                        const data = session.telemetry[key];
+                        if(data.attempts === 0) {
+                            cell.style.background = "#27272a"; 
+                        } else {
+                            const lastAttempt = data.timings[data.timings.length - 1];
+                            if(!lastAttempt.status) {
+                                cell.style.background = "#7f1d1d"; 
+                                cell.style.color = "#ef4444";
+                            } else if(lastAttempt.speed < 1500) {
+                                cell.style.background = "#064e3b"; 
+                                cell.style.color = "#10b981";
+                            } else {
+                                cell.style.background = "#78350f"; 
+                                cell.style.color = "#f59e0b";
+                            }
+                        }
+                    } else {
+                        cell.style.background = "#09090b"; 
+                        cell.style.opacity = "0.2";
+                    }
+                    targetMap.appendChild(cell);
+                }
+            }
+        }
+
+        function exitSession() {
+            setScreen('scr-selector');
+        }
+    </script>
+</body>
+</html>
